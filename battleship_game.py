@@ -1,4 +1,5 @@
 
+import time
 import random
 import numpy as np
 
@@ -112,7 +113,7 @@ class BattleshipGame(object):
 
         print "opponent", opponent.player_name()
 
-        result = current_player.guess(x, y)
+        result = opponent.guess(x, y)
 
         self._current_player = opponent
 

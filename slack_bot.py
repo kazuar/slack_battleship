@@ -40,7 +40,7 @@ def main():
 
     game = battleship_game.BattleshipGame()
 
-    game.start_game("x", "y")
+    game.start_game("first_player", "bot", is_ai = True)
 
     # Connect to slack
     if sc.rtm_connect():
@@ -66,6 +66,7 @@ def main():
                 sc.rtm_send_message(CHANNEL_NAME, print_boards(game))
                 if result == battleship_game.HIT:
                     sc.rtm_send_message(CHANNEL_NAME, "GREAT HIT!")
+                
                 
 
                 # sc.rtm_send_message(CHANNEL_NAME, "<@{}> wrote something...".format(user))
