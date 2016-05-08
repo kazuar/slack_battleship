@@ -5,6 +5,7 @@ import numpy as np
 
 BOARD_SIZE = 5
 
+WIN = 2
 SEA = 0
 SHIP = 1
 HIT = -1
@@ -57,6 +58,9 @@ class Player(object):
             self._board[x][y] = HIT
         return val
 
+    def has_any_ships(self):
+        return SHIP in np.unique(self._board)
+
     def get_board_rows(self, hide_ships = False):
         rows = []
         for row in self._board:
@@ -71,8 +75,9 @@ class Player(object):
 
 class BattleshipGame(object):
 
-    # def __init__(self):
-    #     return
+    def __init__(self):
+        self._current_player = None
+        return
 
     def _get_first_player(self):
         players = [self._player1, self._player2]
@@ -80,6 +85,11 @@ class BattleshipGame(object):
         print "getting first player"
 
         return random.choice(players)
+
+    def current_player(self):
+        if not self._current_player:
+            return None
+        return self._current_player
 
     def _get_current_players(self):
         current_player = self._current_player
@@ -96,26 +106,32 @@ class BattleshipGame(object):
         print self._current_player
 
     def get_boards(self):
-        current_player, opponent = self._get_current_players()
+        # current_player, opponent = self._get_current_players()
 
-        board1_rows = current_player.get_board_rows()
-        board2_rows = opponent.get_board_rows(hide_ships = True)
+        board1_rows = self._player1.get_board_rows()
+        board2_rows = self._player2.get_board_rows(hide_ships = True)
 
         return board1_rows, board2_rows
 
     def turn(self, x, y):
         # self.print_boards()
 
-        print "turn"
-        print "current player", self._current_player.player_name()
+        print "-" * 100
+        print "\n"
 
         current_player, opponent = self._get_current_players()
-
-        print "opponent", opponent.player_name()
-
         result = opponent.guess(x, y)
 
+        print "{0} plays against {1}: {2}, {3}".format(current_player.player_name(), opponent.player_name(), x, y)
+        print "result:", result, type(result)
+
+        if not opponent.has_any_ships():
+            return WIN
+
         self._current_player = opponent
+
+        print "-" * 100
+        print "\n"
 
         return result
 
