@@ -1,11 +1,11 @@
 
 import time
 import random
+import argparse
 from slackclient import SlackClient
 
 import battleship_game
 
-BOT_TOKEN = "<BOT_API_KEY>"
 CHANNEL_NAME = "general"
 
 BATTLESHIP_TO_EMOJI = {
@@ -33,8 +33,15 @@ def get_bot_user(sc):
     return [user for user in sc.server.users if user.name == sc.server.username][0]
 
 def main():
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-t', '--token',
+        dest='api_token', required=True, help='Slack bot API token'
+    )
+    args = parser.parse_args()
+
     # Create the slackclient instance
-    sc = SlackClient(BOT_TOKEN)
+    sc = SlackClient(args.api_token)
 
     game = battleship_game.BattleshipGame()
 
