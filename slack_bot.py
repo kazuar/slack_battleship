@@ -8,31 +8,25 @@ import battleship_game
 BOT_TOKEN = "<BOT_API_KEY>"
 CHANNEL_NAME = "general"
 
-def cell_to_str(cell):
-    cell = int(cell)
-    if cell == 0:
-        return ":ocean:"
-    elif cell == 1:
-        return ":boat:"
-    elif cell == -1:
-        return ":fire:"
-    elif cell == -2:
-        return ":x:"
+BATTLESHIP_TO_EMOJI = {
+    battleship_game.SEA: ":ocean:",
+    battleship_game.SHIP: ":boat:",
+    battleship_game.HIT: ":fire:",
+    battleship_game.MISS: ":x:"
+}
 
 def format_row(row):
-    return row.replace("-2", ":x:").replace("-1", ":fire:").replace("0", ":ocean:").replace("1", ":boat:")
+    for key, emoji in BATTLESHIP_TO_EMOJI.items():
+        row = row.replace(str(key), emoji)
+    return row
 
 def print_boards(game, users):
-    board1, board2 = game.get_boards()
-    message = ["{0} \t\t\t\t\t\t\t {1}\n".format(users[game._player1._player_name].name, users[game._player2._player_name].name)]
-    for i in range(0, len(board1)):
-        message.append("{0} \t\t {1}".format(format_row(board1[i]), format_row(board2[i])))
-    return "\n".join(message)
-
-def print_board(game, users):
-    message = []
-    for row in game._board:
-        message.append(" ".join([cell_to_str(cell) for cell in row]))
+    player1_details, player2_details = game.get_players_boards()
+    message = ["{0} \t\t\t\t\t\t\t {1}\n".format(users[player1_details["player_id"]].name, users[player2_details["player_id"]].name)]
+    for i in range(0, len(player1_details["board"])):
+        board1_row = format_row(player1_details["board"][i])
+        board2_row = format_row(player2_details["board"][i])
+        message.append("{0} \t\t {1}".format(board1_row, board2_row))
     return "\n".join(message)
 
 def get_bot_user(sc):
@@ -49,13 +43,6 @@ def main():
         print "bot is up"
         bot_user = get_bot_user(sc)
         users = {user.id: user for user in sc.server.users}
-
-        # Send first message
-        # sc.rtm_send_message(CHANNEL_NAME, "I'm ALIVE!!!")
-        # message = print_boards(game)
-        # message = print_board(game)
-        # print message
-        # sc.rtm_send_message(CHANNEL_NAME, message)
 
         while True:
             # Read latest messages
@@ -102,8 +89,6 @@ def main():
                     first_player_id = game._current_player._player_name
                     sc.rtm_send_message(CHANNEL_NAME, "YES!!! BOT RULESSSS!")
 
-                # sc.rtm_send_message(CHANNEL_NAME, "<@{}> wrote something...".format(user))
-            # Sleep for half a second
             time.sleep(0.5)
     else:
         print("Couldn't connect to slack")

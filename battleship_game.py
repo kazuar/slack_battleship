@@ -5,11 +5,11 @@ import numpy as np
 
 BOARD_SIZE = 5
 
-WIN = 2
 SEA = 0
 SHIP = 1
-HIT = -1
-NO_HIT = -2
+HIT = 2
+MISS = 3
+WIN = 4
 
 SHAPES = [
     np.ones((1,1)),
@@ -79,12 +79,8 @@ class BattleshipGame(object):
         self._current_player = None
         return
 
-    def _get_first_player(self):
-        players = [self._player1, self._player2]
-
-        print "getting first player"
-
-        return random.choice(players)
+    def _choose_first_player(self):
+        return random.choice([self._player1, self._player2])
 
     def current_player(self):
         if not self._current_player:
@@ -96,25 +92,29 @@ class BattleshipGame(object):
         opponent = self._player2 if self._player1.player_name() == self._current_player.player_name() else self._player1
         return self._current_player, opponent
 
-    def start_game(self, player1, player2):
+    def start_game(self, player_name1, player_name2):
         print "starting game"
-        self._player1 = Player(player1)
-        self._player2 = Player(player2)
+        self._player1 = Player(player_name1)
+        self._player2 = Player(player_name2)
 
-        self._current_player = self._get_first_player()
+        self._current_player = self._choose_first_player()
 
         print self._current_player
 
-    def get_boards(self):
-        # current_player, opponent = self._get_current_players()
+    def get_players_boards(self):
+        players_boards = [
+            {"player_id": self._player1._player_name, "board": self._player1.get_board_rows()},
+            {"player_id": self._player2._player_name, "board": self._player2.get_board_rows(hide_ships = True)},
+        ]
+        return players_boards
 
+    def get_boards(self):
         board1_rows = self._player1.get_board_rows()
         board2_rows = self._player2.get_board_rows(hide_ships = True)
 
         return board1_rows, board2_rows
 
     def turn(self, x, y):
-        # self.print_boards()
 
         print "-" * 100
         print "\n"
@@ -134,13 +134,3 @@ class BattleshipGame(object):
         print "\n"
 
         return result
-
-# def main():
-#     battle_ship_game = BattleshipGame()
-
-#     battle_ship_game.start_game("x", "y")
-
-#     battle_ship_game.print_boards()
-
-# if __name__ == '__main__':
-#     main()
