@@ -1,5 +1,6 @@
 
 import time
+import datetime
 import random
 import argparse
 from slackclient import SlackClient
@@ -15,6 +16,74 @@ BATTLESHIP_TO_EMOJI = {
     battleship_game.MISS: ":x:"
 }
 
+BOT_SLEEP_TIME = 0.5
+
+class SlackBot(object):
+
+    def __init__(self, token_api):
+        self._token_api = token_api
+        self._sc = SlackClient(token_api)
+        self._game = battleship_game.BattleshipGame()
+
+        self._users = {user.id: user for user in self._sc.server.users}
+        self._bot_user_name = self._sc.server.username
+        self._bot_user = [user for user in self._users.values if user.name == self._bot_user_name][0]
+
+    def _process_message(self, message):
+        text = slack_message.get("text")
+        user_id = slack_message.get("user")
+        if not text or not user_id or user_id == self._bot_user.id:
+            return None
+        user = self._users[user_id]
+        print "message from {0} ({1}): {2}".format(user.name, user.id, text)
+        if text == "start game":
+            bot_message = "start new game: {0} ({1}) vs {2} ({3})".format(user.name, user.id, bot_user.name, bot_user.id)
+            print bot_message
+            sc.rtm_send_message(CHANNEL_NAME, bot_message)
+            self._game.start_game(user.id, bot_user.id)
+            sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
+            first_player_id = game._current_player._player_name
+            sc.rtm_send_message(CHANNEL_NAME, "first player: {0} ({1})".format(users[first_player_id].name, first_player_id))
+            return None
+        elif message.replace(" ", "").isdigit():
+            coords = [int(x) for x in message.replace(",", " ").split(" ")]
+            result = game.turn(coords[0], coords[1])
+            sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
+            if result == battleship_game.SHIP:
+                sc.rtm_send_message(CHANNEL_NAME, "Good hit!")
+            elif result == battleship_game.WIN:
+                first_player_id = game._current_player._player_name
+                sc.rtm_send_message(CHANNEL_NAME, "<@{0}> won the game".format(users[first_player_id].name))
+        return None
+
+    def _bot_loop(self):
+        for slack_message in self._sc.rtm_read():
+            self._process_message(slack_message)
+
+        if game._current_player and game._current_player._player_name == bot_user.id:
+            rand_col = random.randint(0, battleship_game.BOARD_SIZE - 1)
+            rand_row = random.randint(0, battleship_game.BOARD_SIZE - 1)
+            result = game.turn(rand_col, rand_row)
+            bot_message = "bot turn: {0}, {1}".format(rand_col, rand_row)
+            print bot_message
+            sc.rtm_send_message(CHANNEL_NAME, bot_message)
+            sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
+            if result == battleship_game.SHIP:
+                sc.rtm_send_message(CHANNEL_NAME, "WOOOHOOOOOO!!!! IN YOUR FACE!!!")
+            elif result == battleship_game.WIN:
+                first_player_id = game._current_player._player_name
+                sc.rtm_send_message(CHANNEL_NAME, "YES!!! BOT RULESSSS!")
+        return
+
+    def run(self):
+        if self._sc.rtm_connect():
+            print datetime.datetime.now(), "bot is up"
+            while True:
+                self._bot_loop()
+                time.sleep(BOT_SLEEP_TIME)
+        else:
+            raise Exception("Failed to connect to slack")
+
 def format_row(row):
     for key, emoji in BATTLESHIP_TO_EMOJI.items():
         row = row.replace(str(key), emoji)
@@ -29,77 +98,17 @@ def print_boards(game, users):
         message.append("{0} \t\t {1}".format(board1_row, board2_row))
     return "\n".join(message)
 
-def get_bot_user(sc):
-    return [user for user in sc.server.users if user.name == sc.server.username][0]
-
 def main():
-
+    # Read slack api token from arguments
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-t', '--token',
         dest='api_token', required=True, help='Slack bot API token'
     )
     args = parser.parse_args()
 
-    # Create the slackclient instance
-    sc = SlackClient(args.api_token)
-
-    game = battleship_game.BattleshipGame()
-
-    # Connect to slack
-    if sc.rtm_connect():
-        print "bot is up"
-        bot_user = get_bot_user(sc)
-        users = {user.id: user for user in sc.server.users}
-
-        while True:
-            # Read latest messages
-            for slack_message in sc.rtm_read():
-                message = slack_message.get("text")
-                user_id = slack_message.get("user")
-                if not message or not user_id:
-                    continue
-                if user_id == bot_user.id:
-                    continue
-                user = users[user_id]
-                print "message", user_id, message
-                # message = " ".join(message.split(" ")[1:])
-                bot_message = None
-                if message == "start game":
-                    bot_message = "start new game: {0} ({1}) vs {2} ({3})".format(user.name, user.id, bot_user.name, bot_user.id)
-                    print bot_message
-                    sc.rtm_send_message(CHANNEL_NAME, bot_message)
-                    game.start_game(user.id, bot_user.id)
-                    sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
-                    first_player_id = game._current_player._player_name
-                    sc.rtm_send_message(CHANNEL_NAME, "first player: {0} ({1})".format(users[first_player_id].name, first_player_id))
-                elif message.replace(" ", "").isdigit():
-                    coords = [int(x) for x in message.replace(",", " ").split(" ")]
-                    result = game.turn(coords[0], coords[1])
-                    sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
-                    if result == battleship_game.SHIP:
-                        sc.rtm_send_message(CHANNEL_NAME, "Good hit!")
-                    elif result == battleship_game.WIN:
-                        first_player_id = game._current_player._player_name
-                        sc.rtm_send_message(CHANNEL_NAME, "<@{0}> won the game".format(users[first_player_id].name))
-
-            if game._current_player and game._current_player._player_name == bot_user.id:
-                rand_col = random.randint(0, battleship_game.BOARD_SIZE - 1)
-                rand_row = random.randint(0, battleship_game.BOARD_SIZE - 1)
-                result = game.turn(rand_col, rand_row)
-                bot_message = "bot turn: {0}, {1}".format(rand_col, rand_row)
-                print bot_message
-                sc.rtm_send_message(CHANNEL_NAME, bot_message)
-                sc.rtm_send_message(CHANNEL_NAME, print_boards(game, users))
-                if result == battleship_game.SHIP:
-                    sc.rtm_send_message(CHANNEL_NAME, "WOOOHOOOOOO!!!! IN YOUR FACE!!!")
-                elif result == battleship_game.WIN:
-                    first_player_id = game._current_player._player_name
-                    sc.rtm_send_message(CHANNEL_NAME, "YES!!! BOT RULESSSS!")
-
-            time.sleep(0.5)
-    else:
-        print("Couldn't connect to slack")
+    # Run the bot
+    bot = SlackBot(args.api_token)
+    bot.run()
 
 if __name__ == '__main__':
     main()
-
